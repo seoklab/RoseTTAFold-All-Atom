@@ -16,16 +16,20 @@ from rf2aa.model.RoseTTAFoldModel import RoseTTAFoldModule
 from rf2aa.training.recycling import recycle_step_legacy
 from rf2aa.util import writepdb, is_atom, Ls_from_same_chain_2d
 from rf2aa.util_module import XYZConverter
+from rf2aa.paths import resolve_path
 
 
 class ModelRunner:
-
     def __init__(self, config) -> None:
         self.config = config
         initialize_chemdata(self.config.chem_params)
         FFindexDB = namedtuple("FFindexDB", "index, data")
-        self.ffdb = FFindexDB(read_index(config.database_params.hhdb+'_pdb.ffindex'),
-                              read_data(config.database_params.hhdb+'_pdb.ffdata'))
+        self.ffdb = FFindexDB(
+            read_index(resolve_path(
+                config.database_params.hhdb + '_pdb.ffindex')),
+            read_data(resolve_path(
+                config.database_params.hhdb + '_pdb.ffdata')),
+        )
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.xyz_converter = XYZConverter()
         self.deterministic = config.get("deterministic", False)
@@ -47,9 +51,9 @@ class ModelRunner:
                     self.config.protein_inputs[chain]["fasta_file"],
                     chain,
                     self
-                ) 
+                )
                 protein_inputs[chain] = protein_input
-        
+
         na_inputs = {}
         if self.config.na_inputs is not None:
             for chain in self.config.na_inputs:
@@ -60,7 +64,7 @@ class ModelRunner:
                 )
                 na_inputs[chain] = na_input
 
-        sm_inputs = {} 
+        sm_inputs = {}
         # first if any of the small molecules are covalently bonded to the protein
         # merge the small molecule with the residue and add it as a separate ligand
         # also add it to residues_to_atomize for bookkeeping later on
@@ -69,7 +73,7 @@ class ModelRunner:
             covalent_sm_inputs, residues_to_atomize_covale = load_covalent_molecules(protein_inputs, self.config, self)
             sm_inputs.update(covalent_sm_inputs)
             residues_to_atomize.extend(residues_to_atomize_covale)
-            
+
         if self.config.sm_inputs is not None:
             for chain in self.config.sm_inputs:
                 if self.config.sm_inputs[chain]["input_type"] not in ["smiles", "sdf"]:
@@ -89,7 +93,7 @@ class ModelRunner:
             # add to the sm_inputs list
             # add to residues to atomize
             raise NotImplementedError("Modres inference is not implemented")
-        
+
         raw_data = merge_all(protein_inputs, na_inputs, sm_inputs, residues_to_atomize, deterministic=self.deterministic)
         self.raw_data = raw_data
 
@@ -106,7 +110,10 @@ class ModelRunner:
             cb_tor = ChemData().cb_torsion_t.to(self.device),
 
         ).to(self.device)
-        checkpoint = torch.load(self.config.checkpoint_path, map_location=self.device)
+        checkpoint = torch.load(
+            resolve_path(self.config.checkpoint_path),
+            map_location=self.device,
+        )
         self.model.load_state_dict(checkpoint['model_state_dict'])
 
     def construct_features(self):
@@ -118,9 +125,9 @@ class ModelRunner:
         input_dict = asdict(input_feats)
         input_dict["bond_feats"] = input_dict["bond_feats"].long()
         input_dict["seq_unmasked"] = input_dict["seq_unmasked"].long()
-        outputs = recycle_step_legacy(self.model, 
-                                     input_dict, 
-                                     self.config.loader_params.MAXCYCLE, 
+        outputs = recycle_step_legacy(self.model,
+                                     input_dict,
+                                     self.config.loader_params.MAXCYCLE,
                                      use_amp=False,
                                      nograds=True,
                                      force_device=self.device)
@@ -138,14 +145,14 @@ class ModelRunner:
         plddts = err_dict["plddts"]
         Ls = Ls_from_same_chain_2d(input_feats.same_chain)
         plddts = plddts[0]
-        writepdb(os.path.join(f"{self.config.output_path}", f"{self.config.job_name}.pdb"), 
-                 xyz_allatom, 
-                 seq_unmasked, 
+        writepdb(os.path.join(f"{self.config.output_path}", f"{self.config.job_name}.pdb"),
+                 xyz_allatom,
+                 seq_unmasked,
                  bond_feats=bond_feats,
                  bfacts=plddts,
                  chain_Ls=Ls
                  )
-        torch.save(err_dict, os.path.join(f"{self.config.output_path}", 
+        torch.save(err_dict, os.path.join(f"{self.config.output_path}",
                                           f"{self.config.job_name}_aux.pt"))
 
     def infer(self):
@@ -200,7 +207,7 @@ class ModelRunner:
         return err_dict
 
 
-@hydra.main(version_base=None, config_path='config/inference')
+@hydra.main(version_base=None, config_path='pkg://rf2aa.config.inference')
 def main(config):
     runner = ModelRunner(config)
     runner.infer()

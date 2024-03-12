@@ -1,3 +1,52 @@
+# seoklab-rf2aa
+
+## Introduction
+
+This is an updated version of RF2AA for seoklab. Most changes only affect the
+installation process and the way the model is run. The original README is
+included below for reference, without any changes.
+
+## Installation
+
+```bash
+mamba env create -f environment.yaml
+conda activate rf2aa
+pip install .
+```
+
+Note that the conda environment lacks signalp6 due to license requirements,
+which is required for the inference task. Signalp6 must be installed separately
+and be available in the `$PATH`.
+
+**For seoklab members**: signalp6 is globally available on the cluster, so you
+don't need to install it separately.
+
+## Usage
+
+Write a config file for the inference task you want to run. The config file
+should be a YAML file that specifies the input files and any other parameters
+you want to set. Config files in the current working directory will be
+automatically picked up.
+
+Run the model with the following command:
+
+```bash
+rf2aa-inference --config-name <filename-without-yaml>
+```
+
+In most cases, you would want to include the default config file. To do this,
+include this lines at the top of your config file:
+
+```yaml
+defaults:
+  - base
+```
+
+Some examples config files could be found in
+[`rf2aa/config/inference`](rf2aa/config/inference).
+
+# Upstream instructions
+
 Code for RoseTTAFold All-Atom
 --------------------
 <p align="right">

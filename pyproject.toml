@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rf2aa"
+version = "0.1.0"
+
+[project.scripts]
+rf2aa-inference = "rf2aa.run_inference:main"
+
+[tool.setuptools]
+script-files = ["make_msa.sh", "input_prep/make_ss.sh"]
+
+[tool.setuptools.packages.find]
+include = ["rf2aa*", "hydra_plugins*"]
+namespaces = true
+
+[tool.setuptools.package-data]
+rf2aa = ["*.json", "*.gz", "*.pt", "*.yaml"]
