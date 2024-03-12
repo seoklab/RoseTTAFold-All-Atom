@@ -14,7 +14,7 @@ script-files = ["make_msa.sh", "input_prep/make_ss.sh"]
 
 [tool.setuptools.packages.find]
 include = ["rf2aa*", "hydra_plugins*"]
-namespaces = true
 
 [tool.setuptools.package-data]
-rf2aa = ["*.json", "*.gz", "*.pt", "*.yaml"]
+rf2aa = ["*.json", "*.gz", "*.pt"]
+"rf2aa.config.inference" = ["*.yaml"]
