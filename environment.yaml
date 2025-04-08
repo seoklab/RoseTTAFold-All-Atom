@@ -1,19 +1,19 @@
 name: rf2aa
 channels:
   - pytorch
-  - nvidia
   - dglteam/label/cu118
   - pyg
   - https://conda.rosettacommons.org
   - conda-forge
+  - nvidia
   - bioconda
 dependencies:
   - python=3.10
-  - pytorch=*=*cuda*
+  - pytorch=2.0.*=*cuda*
   - pytorch-cuda=11.8
-  - torchdata
-  - dgl
-  - pyg
+  - torchdata<0.9
+  - dgl=1.1
+  - pyg=2.5
   - pyrosetta
   - hhsuite
   - csblast
